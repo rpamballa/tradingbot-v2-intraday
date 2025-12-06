@@ -6,6 +6,18 @@ from typing import Any, List, Optional
 
 import yaml
 
+@dataclass
+class TradingSessionConfig:
+    start: str = "09:30"      # HH:MM
+    end: str = "16:00"
+    timezone: str = "America/New_York"
+
+
+@dataclass
+class NotificationsConfig:
+    enabled: bool = False
+    slack_webhook_url: str | None = None
+
 
 @dataclass
 class BrokerConfig:
@@ -70,6 +82,8 @@ class AppConfig:
     logging: LoggingConfig
     multi_strategy: Optional[MultiStrategyConfig] = None
     safety: Optional[SafetyConfig] = None
+    trading_session: Optional[TradingSessionConfig] = None
+    notifications: Optional[NotificationsConfig] = None
 
 
 def load_config(path: str | Path = "config.yaml") -> AppConfig:
@@ -120,6 +134,23 @@ def load_config(path: str | Path = "config.yaml") -> AppConfig:
             atr_take_profit_mult=s_raw.get("atr_take_profit_mult", 3.0),
         )
 
+    session_cfg = None
+    if "trading_session" in raw:
+        ts_raw = raw["trading_session"]
+        session_cfg = TradingSessionConfig(
+            start=ts_raw.get("start", "09:30"),
+            end=ts_raw.get("end", "16:00"),
+            timezone=ts_raw.get("timezone", "America/New_York"),
+        )
+
+    notif_cfg = None
+    if "notifications" in raw:
+        n_raw = raw["notifications"]
+        notif_cfg = NotificationsConfig(
+            enabled=n_raw.get("enabled", False),
+            slack_webhook_url=n_raw.get("slack_webhook_url"),
+        )
+
     return AppConfig(
         environment=raw["environment"],
         broker=broker,
@@ -128,4 +159,6 @@ def load_config(path: str | Path = "config.yaml") -> AppConfig:
         logging=logging_cfg,
         multi_strategy=ms_cfg,
         safety=safety_cfg,
+        trading_session=session_cfg,
+        notifications=notif_cfg,
     )
